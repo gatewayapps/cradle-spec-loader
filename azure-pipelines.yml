@@ -19,8 +19,8 @@ jobs:
         inputs:
           versionSpec: '10.x'
       - script: |
-        yarn install
-        yarn tsc
+          yarn install
+          yarn tsc
       - task: Npm@1
         inputs:
           command: publish
