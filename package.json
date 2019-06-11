@@ -17,7 +17,7 @@
     "typescript": "^3.5.1"
   },
   "peerDependencies": {
-    "@gatewayapps/cradle": "^1.0.0-alpha.2"
+    "@gatewayapps/cradle": "^1.0.0-alpha.3"
   },
   "publishConfig": {
     "access": "public"
