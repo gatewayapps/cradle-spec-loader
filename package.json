@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "repository": "https://github.com/gatewayapps/cradle-spec-loader",
   "author": "Daniel Gary <daniel@gatewayapps.com>",
-  "license": "APACHE 2.0",
+  "license": "ISC",
   "private": false,
   "devDependencies": {
     "@types/chai": "^4.1.7",
