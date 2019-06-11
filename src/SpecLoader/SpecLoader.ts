@@ -1,5 +1,5 @@
 // import ImportModelType, { IImportModelTypeOptions } from '../PropertyTypes/ImportModelType'
-
+import { sync } from 'glob'
 import SpecProperty from './SpecProperty'
 import ParseProperty from './SpecPropertyTypeParser'
 import {
@@ -23,15 +23,22 @@ import {
   IIntegerPropertyTypeOptions,
   IImportModelTypeOptions,
   PropertyTypes,
-  ReferenceModelType
+  ReferenceModelType,
+  LoaderOptions
 } from '@gatewayapps/cradle'
 import { dirname, resolve, join } from 'path'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 
 import { safeLoad } from 'js-yaml'
+import { SpecLoaderOptions } from './SpecLoaderOptions'
 
-export default class SpecLoader extends CradleLoaderBase {
-  private specObject?: object
+export default class SpecLoader extends CradleLoaderBase<SpecLoaderOptions> {
+  private specObject: object = {}
+
+  constructor(options: LoaderOptions) {
+    super(options)
+    console.log('GOT OPTIONS', options)
+  }
 
   public readModelOperationNames(modelName: string): Promise<string[]> {
     if (!this.specObject) {
@@ -127,28 +134,69 @@ export default class SpecLoader extends CradleLoaderBase {
     }
   }
 
-  public async prepareLoader(): Promise<void> {
-    if (!existsSync(this.options.source)) {
-      throw new Error(`Source file does not exist: ${this.options.source}`)
+  private async loadModelsFromGlob(path: string) {
+    this.specObject = {}
+    const matchingFiles = sync(path, {})
+    if (matchingFiles.length === 0) {
+      throw new Error('No files matching glob pattern')
     } else {
-      const dir = dirname(resolve(this.options.source))
-      this.specObject = safeLoad(readFileSync(this.options.source, 'utf8'))
+      matchingFiles.forEach((fileName) => {
+        const fileRoot = safeLoad(readFileSync(fileName, 'utf8'))
 
-      // Handle split spec files
-      // This will only allow spec file references from the master file
-      // meaning you can't chain together references.  This also helps prevent
-      // circular references
-      const modelNames = await this.readModelNames()
-      modelNames.map((mn) => {
-        if (this.specObject && typeof this.specObject[mn] === typeof '') {
-          const fileParts = this.specObject[mn].split('#')
-          const filePath = join(dir, fileParts[0])
-          const modelName = fileParts[1]
+        const fileModels = Object.keys(fileRoot)
+        const currentModels = Object.keys(this.specObject)
 
-          const tempReq = safeLoad(readFileSync(filePath, 'utf8'))
-          this.specObject[mn] = tempReq[modelName]
-        }
+        fileModels.forEach((modelName) => {
+          if (currentModels.includes(modelName)) {
+            throw new Error('Duplicate model name: ' + modelName)
+          }
+        })
+
+        Object.assign(this.specObject, fileRoot)
       })
+    }
+  }
+
+  public async prepareLoader(): Promise<void> {
+    console.log('IN PREPARE LOADER')
+    if (this.options.source && this.options.source.includes('**')) {
+      //glob pattern
+      this.loadModelsFromGlob(this.options.source)
+    } else {
+      if (!existsSync(this.options.source)) {
+        throw new Error(`Source file does not exist: ${this.options.source}`)
+      } else {
+        const stat = statSync(this.options.source)
+
+        if (stat.isFile()) {
+          const dir = dirname(resolve(this.options.source))
+          this.specObject = safeLoad(readFileSync(this.options.source, 'utf8'))
+
+          // Handle split spec files
+          // This will only allow spec file references from the master file
+          // meaning you can't chain together references.  This also helps prevent
+          // circular references
+          const modelNames = await this.readModelNames()
+          modelNames.map((mn) => {
+            if (this.specObject && typeof this.specObject[mn] === typeof '') {
+              const fileParts = this.specObject[mn].split('#')
+              const filePath = join(dir, fileParts[0])
+              const modelName = fileParts[1]
+
+              const tempReq = safeLoad(readFileSync(filePath, 'utf8'))
+              this.specObject[mn] = tempReq[modelName]
+            }
+          })
+        } else {
+          if (stat.isDirectory()) {
+            const finalDir = join(this.options.source, '**/*.yml')
+            this.loadModelsFromGlob(finalDir)
+          }
+        }
+      }
+    }
+    if (!this.specObject) {
+      throw new Error('Failed to load spec')
     }
   }
 
