@@ -21,7 +21,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@gatewayapps/cradle": "^1.0.0-alpha.3",
+    "@gatewayapps/cradle": "^1.0.0-alpha.4",
     "chevrotain": "3.7.4",
     "glob": "^7.1.4",
     "js-yaml": "^3.13.1"
