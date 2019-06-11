@@ -16,13 +16,11 @@
     "prettier": "^1.18.2",
     "typescript": "^3.5.1"
   },
-  "peerDependencies": {
-    "@gatewayapps/cradle": "^1.0.0-alpha.3"
-  },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
+    "@gatewayapps/cradle": "^1.0.0-alpha.3",
     "chevrotain": "3.7.4",
     "js-yaml": "^3.13.1"
   }
