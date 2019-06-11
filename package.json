@@ -20,7 +20,7 @@
     "@gatewayapps/cradle": "^1.0.0-alpha.2"
   },
   "publishConfig": {
-    "public": true
+    "access": "public"
   },
   "dependencies": {
     "chevrotain": "3.7.4",
