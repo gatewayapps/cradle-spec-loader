@@ -7,9 +7,7 @@ jobs:
         inputs:
           versionSpec: '10.x'
       - script: |
-          npm install
-          npx tslint --project .
-          npm test
+          yarn install
 
   - job: Publish
     pool:
@@ -20,7 +18,9 @@ jobs:
       - task: NodeTool@0
         inputs:
           versionSpec: '10.x'
-      - script: npm install
+      - script: |
+        yarn install
+        yarn tsc
       - task: Npm@1
         inputs:
           command: publish
