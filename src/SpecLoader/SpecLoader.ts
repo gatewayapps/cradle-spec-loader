@@ -6,7 +6,6 @@ import {
   PropertyType,
   ImportModelType,
   CradleModel,
-  ObjectPropertyType,
   ArrayPropertyType,
   BooleanPropertyType,
   DateTimePropertyType,
@@ -63,6 +62,8 @@ export default class SpecLoader extends CradleLoaderBase<SpecLoaderOptions> {
     operationName: string
   ): Promise<ICradleOperation> {
     let returnType = this.specObject![modelName].operations[operationName].returns
+    const description: string | undefined = this.specObject![modelName].operations[operationName]
+      .description
     if (returnType) {
       returnType = await this.getPropertyTypeFromDefinition(returnType)
     }
@@ -93,7 +94,8 @@ export default class SpecLoader extends CradleLoaderBase<SpecLoaderOptions> {
 
     return {
       Arguments: _args,
-      Returns: returnType
+      Returns: returnType,
+      Description: description
     }
   }
   public async readModelPropertyType(
@@ -267,11 +269,11 @@ export default class SpecLoader extends CradleLoaderBase<SpecLoaderOptions> {
     })
     return Promise.resolve(schema)
   }
-  public getModelReference(schema: CradleSchema, ref: ImportModelType): ObjectPropertyType {
+  public getModelReference(schema: CradleSchema, ref: ImportModelType): ImportModelType {
     const modelRef = schema.GetModel(ref.ModelName)
     if (modelRef) {
-      return new ObjectPropertyType({
-        Members: modelRef.Properties,
+      return new ImportModelType({
+        ModelName: ref.ModelName,
         AllowNull: ref.AllowNull,
         IsPrimaryKey: ref.IsPrimaryKey,
         DefaultValue: ref.DefaultValue
@@ -322,27 +324,28 @@ export default class SpecLoader extends CradleLoaderBase<SpecLoaderOptions> {
           return new ImportModelType({ ModelName: property.modelRef })
         }
       }
-      const subProperties = Object.keys(property.properties)
+      throw new Error('Property Type not supported')
+      // const subProperties = Object.keys(property.properties)
 
-      const members: Array<{ propertyName: string; propertyType: PropertyType }> = []
-      for (const subProp of subProperties) {
-        if (!!subProp) {
-          members.push({
-            propertyName: subProp,
-            propertyType: await this.getPropertyTypeFromDefinition(property.properties[subProp])
-          })
-        }
-      }
+      // const members: Array<{ propertyName: string; propertyType: PropertyType }> = []
+      // for (const subProp of subProperties) {
+      //   if (!!subProp) {
+      //     members.push({
+      //       propertyName: subProp,
+      //       propertyType: await this.getPropertyTypeFromDefinition(property.properties[subProp])
+      //     })
+      //   }
+      // }
 
-      const memberMap = new Map<string, PropertyType>()
-      members.forEach((m) => memberMap.set(m.propertyName, m.propertyType))
+      // const memberMap = new Map<string, PropertyType>()
+      // members.forEach((m) => memberMap.set(m.propertyName, m.propertyType))
 
-      const propertyType = new ObjectPropertyType({ Members: memberMap, AllowNull: true })
-      if (isArray) {
-        return new ArrayPropertyType({ MemberType: propertyType })
-      } else {
-        return propertyType
-      }
+      // const propertyType = new ObjectPropertyType({ Members: memberMap, AllowNull: true })
+      // if (isArray) {
+      //   return new ArrayPropertyType({ MemberType: propertyType })
+      // } else {
+      //   return propertyType
+      // }
     }
   }
 
